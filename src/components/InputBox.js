@@ -11,19 +11,18 @@ const InputBox = (props) => {
 
         <InputToolbar
             {...props}
-
+           
             containerStyle={{
                 backgroundColor: 'transparent',
-                borderRadius: 30,
-                borderTopWidth: 0,
-                // marginHorizontal: 5,
+              //  borderColor : 'transparent'
+               // borderRadius: 30,
+               // marginLeft : 4,
                 marginBottom: 4,
-
-                // height: 47,
-                display: 'flex',
-                justifyContent: 'center',
-                //  paddingBottom: 2,
-
+               borderTopColor : 'transparent',
+               // display: 'flex',
+               justifyContent: 'center',
+                // paddi: 2,
+               // display : 'none'
                 //  width: 295
 
             }} />

@@ -2,23 +2,28 @@ import { Avatar, Box, Button, HStack, Icon, IconButton, Input, Text, View } from
 import React, { useLayoutEffect, useEffect, useState, useCallback } from 'react'
 import { StyleSheet, ImageBackground, LogBox, Pressable, } from 'react-native'
 import { Bubble, GiftedChat, Send } from 'react-native-gifted-chat'
-import chatBackround from '../assets/watsapp/chatBackground.png'
+import chatBackround from '../../assets/watsapp/chatBackground.png'
 import ChatHeader from '../components/ChatHeader'
-import Composer from '../components/Composer'
 import InputBox from '../components/InputBox'
-import { useStore } from './../store';
-import * as firebase from 'firebase'
+import { useStore } from '../stores/userStore';
+import { Ionicons  } from '@expo/vector-icons';
+import { supabase } from '../config/sbaseConfig';
+import 'react-native-url-polyfill/auto'
+import Composer from '../components/Composer'
+import LeftIcon from '../components/LeftIcon'
+
 
 LogBox.ignoreLogs([' The contrast ratio of 1.5869276981034446:1 for gray.500 on #075E54']);
 
 
 const ChatScreen = ({ navigation, route }) => {
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState(null);
     const [image, setImage] = useState("");
     const [video, setVideo] = useState("");
     const [audio, setAudio] = useState("");
     const text = useStore(state => state.text);
-    const { uid, displayName } = firebase.auth().currentUser;
+    const {id}  = supabase.auth.user()
+    
     const { chat } = route.params;
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -26,60 +31,61 @@ const ChatScreen = ({ navigation, route }) => {
             headerStyle: {
                 backgroundColor: '#075E54',
                 elevation: 8,
-                height: 59,
-
+                height: 85,
             },
+            headerTitleStyle : {
+                flex : 1
+            },
+            
             headerTitle: props => <ChatHeader {...props} chat={chat} />,
 
         })
 
-    }, [])
+    }, []);
 
 
-    const updateMessage = (messageId, newValues) => {
-        //Here your implementation to update the state messages.
-        messages.filter((item) => item.id == messageId).map((item) => {
-            return { ...item, newValues }
-        })
+    const getMessages = async () => {
+        let { data } = await supabase
+            .from('messages')
+            .select(`_id, text ,createdAt , pending,
+            user : userId(_id , name)`)
+            .filter('chatId', 'eq', chat.id)
+
+      setMessages(data)
     }
-
-
-    useEffect(() => {
+   
+   useEffect(() => {
         // Load all the messages for this chat
-        const subscriber = firebase.firestore().collection('messages').
-            where('chatId', '==', chat.id).
-            onSnapshot((snapshot) => {
-                const firestoreMessages = snapshot.docChanges().filter(({ type }) => type === "added").
-                    map(({ doc }) => {
-                        const message = doc.data()
-                        //console.log(message && message.createdAt && message.createdAt.toDate().toLocaleTimeString())
-                        return { ...message, _id: doc.id, sent: true, pending: false, createdAt: message.created.toDate() }
-                    })
-                setMessages(firestoreMessages)
-            })
+             getMessages()
+        //Listen to realtime events from the messages table
+        const mySubscription = supabase
+            .from('messages')
+            .on('*', () => getMessages())
+            .subscribe()
 
-        return () => subscriber();
-    }, [])
+        return () =>   supabase.removeSubscription(mySubscription)
 
-    // console.log(messages)
-    const onSend = () => {
-        // setMessages(previousMessages => GiftedChat.append(previousMessages, messages))
-        firebase.firestore().collection("messages").add({
-            text: text,
-            created: firebase.firestore.FieldValue.serverTimestamp(),
-            user: {
-                _id: uid,
-                name: displayName ? displayName : ''
-            },
-            chatId: chat.id,
-            pending: true,
-            image: image,
-            video: video,
-            audio: audio
-
-        }).then()
-        useStore.setState({ text: '' })
+    }, []) 
+     
+     //console.log(messages)
+    const onSend = async () => {
+        /* setMessages(previousMessages => GiftedChat.append(previousMessages, messages)) */
+        const { data, error } = await supabase
+        .from('messages')
+        .insert([
+            { text: text, 
+                chatId: chat.id ,
+                userId : id,
+                  pending: false,
+                image: image, 
+                video: video,
+                audio: audio
+     
+            }])
+    
+        useStore.setState({ text: '' }) 
     }
+
     //  console.log(messages)
     return (
         <View justifyContent="center" flex={1}>
@@ -91,15 +97,16 @@ const ChatScreen = ({ navigation, route }) => {
                     bottomOffset={-10}
                     text={text}
                     messages={messages}
-                    onSend={messages => onSend(messages)}
+                    onSend={() => onSend()}
                     user={{
-                        _id: uid,
+                        _id: id,
                     }}
+                     
                     renderInputToolbar={(props) => <InputBox {...props} />}
                     alwaysShowSend={true}
-                    renderComposer={(props) => (
-                        <Composer {...props} />
-                    )}
+                     renderComposer = { (props) => {
+                         return <Composer {...props}/>
+                     } }
                     renderSend={(props) => {
                         return (
                             <Send {...props}>
@@ -109,14 +116,12 @@ const ChatScreen = ({ navigation, route }) => {
                                     justifyContent="center"
                                     bg="#128C7E"
                                     style={styles.sendButtton}
-
+                                      
                                 >
-                                    <Icon type="FontAwesome"
-                                        variant="solid"
-                                        name="paper-plane"
+                                     <Icon as={ <Ionicons  name="ios-paper-plane-sharp" />}   
                                         color="white"
-                                        style={{ transform: [{ rotateZ: '410deg' }] }}
-                                    />
+                                        size={6}
+                                        style={{ transform: [{ rotateZ: '410deg' }] }}/>   
                                 </Box>
                             </Send>
                         )
@@ -127,6 +132,7 @@ const ChatScreen = ({ navigation, route }) => {
                         wrapperStyle={{
                             right: {
                                 backgroundColor: "#dcf8c6",
+                                marginBottom : 10
 
                             }
                         }}
@@ -152,12 +158,12 @@ const styles = StyleSheet.create({
         resizeMode: 'cover',
     },
     sendButtton: {
-        marginTop: 10,
+        marginTop: 8,
         marginRight: 3,
         paddingRight: 5,
         height: 45,
         width: 45,
-        marginLeft: 10,
+        marginLeft: 5,
         borderRadius: 30,
         borderWidth: 0.2
     }

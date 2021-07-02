@@ -1,11 +1,13 @@
-import { HStack, Icon, Text, View } from 'native-base'
+import { HStack, Icon, Text, View , IconButton} from 'native-base'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import React, { useEffect, useLayoutEffect } from 'react'
 import { StyleSheet, } from 'react-native'
 import ChatsScreen from './ChatsScreen';
-import StatusScreen from './StatusScreen';
-import CallsScreen from './CallsScreen';
-import { backgroundColor, color } from 'styled-system';
+import StatusScreen from '../../screens/StatusScreen';
+import CallsScreen from '../../screens/CallsScreen';
+import { FontAwesome} from '@expo/vector-icons';
+import { supabase } from '../config/sbaseConfig';
+
 
 
 
@@ -14,10 +16,12 @@ import { backgroundColor, color } from 'styled-system';
 const Tab = createMaterialTopTabNavigator();
 const HomeScreen = ({ navigation }) => {
     //Prevent going back to profile screen or auth stack
-    useEffect(() => {
-        navigation.addListener('beforeRemove', (e) => e.preventDefault())
-
-    }, []);
+    const signout = async () => {
+        let { error } = await supabase.auth.signOut()
+        if (error) {
+            console.log(error)
+        }
+    }
 
 
     useLayoutEffect(() => {
@@ -29,9 +33,14 @@ const HomeScreen = ({ navigation }) => {
             headerTitleAlign: 'left',
             headerLeft: null,
             headerRight: () => (
-                <HStack space={7} pr={3}>
-                    <Icon type="FontAwesome5" name="search" color="white" />
-                    <Icon type="Ionicons" name="ellipsis-vertical" color="white" />
+                <HStack space={7} pr={5}>
+                  <IconButton
+                            onPress={() => {
+                                signout()
+                            }}
+                            variant="unstyled"
+                            icon={<Icon size="sm" as={FontAwesome} name="power-off" color="white" />}
+                        />
                 </HStack>
             )
         })

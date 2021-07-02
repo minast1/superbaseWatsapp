@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, LogBox, } from 'react-native'
 import avatar from '../assets/watsapp/avatar.png'
 import * as ImagePicker from 'expo-image-picker';
 import * as firebase from 'firebase'
-import { useStore } from './../store';
+import { useStore } from '../../store';
 
 
 LogBox.ignoreLogs(['Setting a timer for a long period of time']);

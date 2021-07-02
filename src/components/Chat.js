@@ -22,7 +22,7 @@ const Chat = ({ item }) => {
 
                 </VStack>
             </HStack>
-            <Divider style={styles.divider} width={250} bg="gray.300" />
+            <Divider style={styles.divider} width={250} bg="lightgray" />
         </Box>
 
     )
@@ -33,7 +33,7 @@ export default Chat
 const styles = StyleSheet.create({
     divider: {
         marginLeft: 77,
-        borderWidth: 0.5
+        borderWidth: 0.09
 
     }
 })

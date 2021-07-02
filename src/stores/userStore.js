@@ -6,12 +6,12 @@ import * as SecureStore from 'expo-secure-store';
 
 
 
-export const useUserStore = create((set, get) => ({
+export const useStore = create((set, get) => ({
     switchAuth: false,
     avatar_url: '',
     username: '',
     session: null,
-
+    text : '',
     lLoading: false,
     rLoading: false,
 
